@@ -261,7 +261,7 @@ void main() {
     },
   );
 
-  testWidgets('Calendar shows Add Class button on empty day', (tester) async {
+  testWidgets('Calendar shows empty state on empty day', (tester) async {
     // Use a taller screen so the content fits below the calendar
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.binding.setSurfaceSize(const Size(400, 900));
@@ -285,8 +285,14 @@ void main() {
     for (int i = 0; i < 10; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
-    // CalendarScreen with no sessions/deadlines should show the "Add Class" button
-    expect(find.text('Add Class'), findsWidgets);
+    // CalendarScreen with no sessions/deadlines should show empty state text and hint
+    expect(find.text('Nothing planned here'), findsOneWidget);
+    expect(
+      find.text(
+        'Tap the button below to add a class\nor deadline for this day.',
+      ),
+      findsOneWidget,
+    );
   });
 
   // Slot creation dialog ("All [day]s" / "This [day] only") requires
