@@ -25,6 +25,19 @@ import '../../core/database/daos/session_dao.dart';
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
+  /// Pure helper to decide whether the test reminder button should be shown.
+  /// Defaults to true (ON) when [storedValue] is null.
+  static bool shouldShowTestReminderButton(bool? storedValue) {
+    return storedValue ?? true;
+  }
+
+  /// Read the stored test reminder button preference from SharedPreferences.
+  /// Defaults to true if no preference is stored.
+  static Future<bool> isTestReminderButtonEnabled({SharedPreferences? prefs}) async {
+    final p = prefs ?? await SharedPreferences.getInstance();
+    return shouldShowTestReminderButton(p.getBool(prefShowTestReminderButton));
+  }
+
   @override
   ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
@@ -41,6 +54,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool? _notificationGranted;
   bool _exactReminders = false;
   bool _backgroundCatchUp = true;
+  bool _showTestReminderButton = true;
 
   @override
   void initState() {
@@ -219,6 +233,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final target = prefs.getInt(prefDefaultTargetPercent);
     final exact = prefs.getBool(prefExactReminders) ?? false;
     final catchUp = await ReminderGuardian.isBackgroundCatchUpEnabled(prefs: prefs);
+    final showTestReminder = await SettingsScreen.isTestReminderButtonEnabled(prefs: prefs);
     if (mounted) {
       setState(() {
         if (start != null) _semesterStart = DateTime.tryParse(start);
@@ -226,8 +241,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         if (target != null) _defaultTarget = target.toDouble();
         _exactReminders = exact;
         _backgroundCatchUp = catchUp;
+        _showTestReminderButton = showTestReminder;
       });
     }
+  }
+
+  Future<void> _onShowTestReminderButtonChanged(bool value) async {
+    setState(() => _showTestReminderButton = value);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(prefShowTestReminderButton, value);
   }
 
   Future<void> _onBackgroundCatchUpChanged(bool value) async {
@@ -925,6 +947,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ],
               ),
             ),
+          _SettingTile(
+            title: 'Show test reminder button',
+            subtitle: 'Display the 1-minute test reminder button below',
+            trailing: Switch(
+              value: _showTestReminderButton,
+              onChanged: _onShowTestReminderButtonChanged,
+            ),
+            onTap: () =>
+                _onShowTestReminderButtonChanged(!_showTestReminderButton),
+          ),
           const SizedBox(height: 8),
           Center(
             child: SizedBox(
@@ -947,17 +979,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 8),
-          Center(
-            child: SizedBox(
-              width: 240,
-              child: OutlinedButton.icon(
-                onPressed: _sendTestReminder,
-                icon: const Icon(Icons.timer_outlined, size: 18),
-                label: const Text('Send Test Reminder (1 min)'),
+          if (_showTestReminderButton) ...[
+            const SizedBox(height: 8),
+            Center(
+              child: SizedBox(
+                width: 240,
+                child: OutlinedButton.icon(
+                  onPressed: _sendTestReminder,
+                  icon: const Icon(Icons.timer_outlined, size: 18),
+                  label: const Text('Send Test Reminder (1 min)'),
+                ),
               ),
             ),
-          ),
+          ],
           const SizedBox(height: 8),
           Center(
             child: SizedBox(
