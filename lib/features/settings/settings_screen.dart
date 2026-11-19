@@ -39,6 +39,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   TimeOfDay? _breakStart = const TimeOfDay(hour: 12, minute: 30);
   TimeOfDay? _breakEnd = const TimeOfDay(hour: 13, minute: 0);
   bool? _notificationGranted;
+  bool _exactReminders = false;
 
   @override
   void initState() {
@@ -130,14 +131,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await ns.init();
       final plugin = ns.resolveAndroidPlugin();
 
-      // Determine schedule mode
-      AndroidScheduleMode mode = AndroidScheduleMode.inexactAllowWhileIdle;
-      try {
-        final canExact = await plugin?.canScheduleExactNotifications() ?? false;
-        mode = canExact
-            ? AndroidScheduleMode.exactAllowWhileIdle
-            : AndroidScheduleMode.inexactAllowWhileIdle;
-      } catch (_) {}
+      // Determine schedule mode based on user setting and system permission
+      final mode = await ns.resolveScheduleMode();
 
       // Schedule 1 minute from now
       final now = DateTime.now();
@@ -221,12 +216,67 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final start = prefs.getString(prefSemesterStart);
     final end = prefs.getString(prefSemesterEnd);
     final target = prefs.getInt(prefDefaultTargetPercent);
+    final exact = prefs.getBool(prefExactReminders) ?? false;
     if (mounted) {
       setState(() {
         if (start != null) _semesterStart = DateTime.tryParse(start);
         if (end != null) _semesterEnd = DateTime.tryParse(end);
         if (target != null) _defaultTarget = target.toDouble();
+        _exactReminders = exact;
       });
+    }
+  }
+
+  Future<void> _onExactRemindersChanged(bool value) async {
+    if (!value) {
+      setState(() => _exactReminders = false);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(prefExactReminders, false);
+      await _rescheduleReminders();
+      return;
+    }
+
+    final ns = NotificationService();
+    await ns.init();
+    bool canExact = await ns.canScheduleExactAlarms();
+
+    if (!canExact) {
+      await ns.requestExactAlarmPermission();
+      canExact = await ns.canScheduleExactAlarms();
+    }
+
+    if (!canExact) {
+      if (mounted) {
+        setState(() => _exactReminders = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Exact alarm permission not granted'),
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(prefExactReminders, false);
+      return;
+    }
+
+    if (mounted) {
+      setState(() => _exactReminders = true);
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(prefExactReminders, true);
+    await _rescheduleReminders();
+  }
+
+  Future<void> _rescheduleReminders() async {
+    try {
+      final db = ref.read(databaseProvider);
+      final deadlines = await db.deadlineDao.getDeadlinesWithReminders();
+      final ns = NotificationService();
+      await ns.init();
+      await ns.rescheduleAll(deadlines);
+    } catch (e) {
+      debugPrint('[SettingsScreen] Reschedule error: $e');
     }
   }
 
@@ -825,6 +875,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             subtitle: 'New deadlines default to 9:00 AM on weekdays',
             trailing: const Icon(Icons.access_time),
             onTap: () {},
+          ),
+          _SettingTile(
+            title: 'Exact reminders',
+            subtitle:
+                'on means it rings at the exact minute but needs a system permission; off means it may arrive a few minutes late.',
+            trailing: Switch(
+              value: _exactReminders,
+              onChanged: _onExactRemindersChanged,
+            ),
+            onTap: () => _onExactRemindersChanged(!_exactReminders),
           ),
           const SizedBox(height: 8),
           Center(

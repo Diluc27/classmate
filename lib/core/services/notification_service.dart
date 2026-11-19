@@ -5,7 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../database/app_database.dart';
+import '../utils/constants.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._();
@@ -75,28 +77,53 @@ class NotificationService {
     }
   }
 
-  /// Resolve the appropriate [AndroidScheduleMode] based on exact alarm permission.
-  /// Uses the plugin's built-in API to check [canScheduleExactNotifications].
-  /// Returns [exactAllowWhileIdle] if SCHEDULE_EXACT_ALARM is granted,
-  /// [inexactAllowWhileIdle] if denied (graceful degradation).
+  /// Pure function to determine schedule mode based on switch state and permission.
+  static AndroidScheduleMode determineScheduleMode({
+    required bool exactRemindersEnabled,
+    required bool canScheduleExact,
+  }) {
+    if (exactRemindersEnabled && canScheduleExact) {
+      return AndroidScheduleMode.exactAllowWhileIdle;
+    }
+    return AndroidScheduleMode.inexactAllowWhileIdle;
+  }
+
+  /// Check whether exact reminders are enabled in settings.
+  Future<bool> isExactRemindersEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(prefExactReminders) ?? false;
+  }
+
+  /// Resolve the appropriate [AndroidScheduleMode] based on exact reminders switch
+  /// and exact alarm permission.
+  /// Returns [exactAllowWhileIdle] only if the switch is ON and permission is granted,
+  /// otherwise [inexactAllowWhileIdle].
   Future<AndroidScheduleMode> _resolveScheduleMode() async {
     try {
+      final exactEnabled = await isExactRemindersEnabled();
       final androidImpl = _plugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
       final canExact = await androidImpl?.canScheduleExactNotifications() ?? false;
-      if (canExact) {
-        debugPrint('[NotificationService] Using exactAllowWhileIdle (permission GRANTED)');
-        return AndroidScheduleMode.exactAllowWhileIdle;
+
+      final mode = determineScheduleMode(
+        exactRemindersEnabled: exactEnabled,
+        canScheduleExact: canExact,
+      );
+
+      if (mode == AndroidScheduleMode.exactAllowWhileIdle) {
+        debugPrint('[NotificationService] Using exactAllowWhileIdle (switch ON & permission GRANTED)');
+      } else {
+        debugPrint('[NotificationService] Using inexactAllowWhileIdle (switch: $exactEnabled, permission: $canExact)');
       }
-      if (Platform.isAndroid) {
-        debugPrint('[NotificationService] Exact alarm DENIED — using inexactAllowWhileIdle');
-      }
-      return AndroidScheduleMode.inexactAllowWhileIdle;
+      return mode;
     } catch (e) {
       debugPrint('[NotificationService] _resolveScheduleMode error: $e');
       return AndroidScheduleMode.inexactAllowWhileIdle;
     }
   }
+
+  /// Public accessor for resolving the schedule mode.
+  Future<AndroidScheduleMode> resolveScheduleMode() => _resolveScheduleMode();
 
   /// Schedule a reminder for the given deadline.
   /// Returns true if successfully scheduled, false if permission was denied.
@@ -110,14 +137,17 @@ class NotificationService {
       return false;
     }
 
-    // Ensure exact alarm permission for reliable timing
-    final canExact = await canScheduleExactAlarms();
-    if (!canExact && Platform.isAndroid) {
-      debugPrint('[NotificationService] Exact alarm not allowed — requesting...');
-      await requestExactAlarmPermission();
+    // Ensure exact alarm permission only if exact reminders switch is enabled
+    final exactEnabled = await isExactRemindersEnabled();
+    if (exactEnabled) {
+      final canExact = await canScheduleExactAlarms();
+      if (!canExact && Platform.isAndroid) {
+        debugPrint('[NotificationService] Exact alarm not allowed — requesting...');
+        await requestExactAlarmPermission();
+      }
     }
 
-    // Resolve schedule mode based on current permission state (re-checks after request)
+    // Resolve schedule mode based on switch state and permission
     final scheduleMode = await _resolveScheduleMode();
 
     final location = tz.local;
