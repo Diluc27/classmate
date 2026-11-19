@@ -49,7 +49,7 @@ void main() {
     await pumpNavigation(tester);
   }
 
-  testWidgets('ClassMate app boots at the home route', (tester) async {
+  testWidgets('Ateno app boots at the home route', (tester) async {
     await pumpApp(tester);
 
     expect(find.byType(MaterialApp), findsOneWidget);
