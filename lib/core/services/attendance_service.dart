@@ -13,7 +13,7 @@ class AttendanceStats {
 
   int get total => present + absent;
   double get percent => total == 0 ? 0 : (present / total) * 100;
-  int get safeLeaves => total == 0 ? 0 : (present - (targetPercent * total / 100)).floor();
+  int get safeLeaves => total == 0 ? 0 : (present - (targetPercent * total / 100)).floor().clamp(0, 999);
   bool get isSafe => total == 0 || percent >= targetPercent;
   int get classesNeeded =>
       total == 0
