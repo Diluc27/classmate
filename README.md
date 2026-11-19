@@ -60,7 +60,7 @@ A student planner app designed to help track attendance targets, manage weekly t
 
 ## Testing
 
-Test files live in the `test/` directory (`test/widget_test.dart` and `test/core/services/lecture_slot_calculator_test.dart`).
+Test files live in the `test/` directory (`test/widget_test.dart`, `test/core/services/lecture_slot_calculator_test.dart`, and `test/core/services/attendance_service_test.dart`).
 
 To run a specific test file:
 ```bash
