@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <shortcut
+        android:shortcutId="add_class"
+        android:enabled="true"
+        android:icon="@mipmap/launcher_icon"
+        android:shortcutShortLabel="@string/shortcut_add_class_short_label"
+        android:shortcutLongLabel="@string/shortcut_add_class_long_label">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.classmate.classmate"
+            android:targetClass="com.classmate.classmate.MainActivity"
+            android:data="klasmate://app/add-class" />
+        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
+            <parameter-binding
+                android:key="feature"
+                android:value="@string/feature_name_add_class" />
+        </capability-binding>
+    </shortcut>
+
+    <!-- BII: "Hey Google, open Add Class on Ateno" -->
+    <capability android:name="actions.intent.OPEN_APP_FEATURE">
+        <intent>
+            <url-template android:value="klasmate://app/add-class" />
+            <parameter
+                android:name="feature"
+                android:key="featureName"
+                android:required="false" />
+        </intent>
+    </capability>
+
+    <!-- Custom intent: "Hey Google, add a class on Ateno" -->
+    <capability android:name="custom.actions.intent.ADD_CLASS"
+        app:queryPatterns="@array/add_class_query_patterns">
+        <intent>
+            <url-template android:value="klasmate://app/add-class" />
+        </intent>
+    </capability>
+</shortcuts>

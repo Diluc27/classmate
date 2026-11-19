@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcut_add_class_short_label">Add Class</string>
+    <string name="shortcut_add_class_long_label">Add a class in Ateno</string>
+
+    <!-- App Actions: feature name for OPEN_APP_FEATURE BII -->
+    <string name="feature_name_add_class">add class</string>
+
+    <!-- App Actions: query patterns for custom.actions.intent.ADD_CLASS -->
+    <string-array name="add_class_query_patterns">
+        <item>add a class</item>
+        <item>create a new class</item>
+        <item>add a new subject</item>
+        <item>record a class</item>
+    </string-array>
+</resources>
