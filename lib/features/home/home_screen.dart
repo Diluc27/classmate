@@ -377,7 +377,7 @@ class HomeScreen extends ConsumerWidget {
 
             // Title
             Text(
-              'Welcome to\nClassMate',
+              'Welcome to\nAteno',
               textAlign: TextAlign.center,
               style: TextStyle(fontFamily: 'Inter', 
                 fontSize: 30,
