@@ -8,6 +8,7 @@ const String prefDefaultTargetPercent = 'default_target_percent';
 const String prefAllowPreMarking = 'allow_pre_marking';
 const String prefThemeMode = 'theme_mode';
 const String prefExactReminders = 'exact_reminders';
+const String prefBackgroundCatchUp = 'background_catch_up';
 
 // Default values
 const int defaultTargetPercent = 75;

@@ -6,6 +6,113 @@ import 'package:workmanager/workmanager.dart';
 import 'package:drift/drift.dart';
 
 import 'package:classmate/core/database/app_database.dart';
+import 'package:classmate/core/utils/constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// Service managing periodic reminder catch-up in the background via WorkManager.
+class ReminderGuardian {
+  static const String taskUniqueName = 'com.classmate.classmate/reminder-guardian';
+  static const String taskName = 'checkDueReminders';
+  static const Duration taskFrequency = Duration(minutes: 15);
+
+  /// Check whether [now] falls within the reminder catch-up window.
+  ///
+  /// The late side is widened to 20 minutes (posts if due within the last 20 minutes).
+  /// The early side is kept at about 1 minute before due time.
+  static bool isInWindow({
+    required DateTime reminderTime,
+    required DateTime now,
+  }) {
+    final earliest = reminderTime.subtract(const Duration(minutes: 1));
+    final latest = reminderTime.add(const Duration(minutes: 20));
+    return !now.isBefore(earliest) && !now.isAfter(latest);
+  }
+
+  /// Check whether a recurring reminder has already fired today.
+  static bool isAlreadyFiredToday({
+    required DateTime? lastReminderFiredDate,
+    required DateTime now,
+  }) {
+    if (lastReminderFiredDate == null) return false;
+    final today = DateTime(now.year, now.month, now.day);
+    return !lastReminderFiredDate.isBefore(today);
+  }
+
+  /// Check whether a one-time reminder has already fired.
+  static bool isOneTimeAlreadyFired(bool reminderFired) {
+    return reminderFired;
+  }
+
+  /// Register periodic WorkManager task (runs every ~15 min).
+  static Future<void> registerPeriodicTask({
+    Future<void> Function(
+      String uniqueName,
+      String taskName, {
+      Duration? frequency,
+      ExistingPeriodicWorkPolicy? existingWorkPolicy,
+      Constraints? constraints,
+    })? registerFn,
+  }) async {
+    if (registerFn != null) {
+      await registerFn(
+        taskUniqueName,
+        taskName,
+        frequency: taskFrequency,
+        existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
+        constraints: Constraints(networkType: NetworkType.notRequired),
+      );
+    } else {
+      await Workmanager().registerPeriodicTask(
+        taskUniqueName,
+        taskName,
+        frequency: taskFrequency,
+        existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
+        constraints: Constraints(networkType: NetworkType.notRequired),
+      );
+    }
+  }
+
+  /// Cancel the periodic WorkManager task.
+  static Future<void> cancelPeriodicTask({
+    Future<void> Function(String uniqueName)? cancelFn,
+  }) async {
+    if (cancelFn != null) {
+      await cancelFn(taskUniqueName);
+    } else {
+      await Workmanager().cancelByUniqueName(taskUniqueName);
+    }
+  }
+
+  /// Read the background catch-up preference (defaults to true).
+  static Future<bool> isBackgroundCatchUpEnabled({
+    SharedPreferences? prefs,
+  }) async {
+    final p = prefs ?? await SharedPreferences.getInstance();
+    return p.getBool(prefBackgroundCatchUp) ?? true;
+  }
+
+  /// Set the background catch-up preference and register or cancel the task accordingly.
+  static Future<void> setBackgroundCatchUp(
+    bool enabled, {
+    SharedPreferences? prefs,
+    Future<void> Function(
+      String uniqueName,
+      String taskName, {
+      Duration? frequency,
+      ExistingPeriodicWorkPolicy? existingWorkPolicy,
+      Constraints? constraints,
+    })? registerFn,
+    Future<void> Function(String uniqueName)? cancelFn,
+  }) async {
+    final p = prefs ?? await SharedPreferences.getInstance();
+    await p.setBool(prefBackgroundCatchUp, enabled);
+    if (enabled) {
+      await registerPeriodicTask(registerFn: registerFn);
+    } else {
+      await cancelPeriodicTask(cancelFn: cancelFn);
+    }
+  }
+}
 
 /// Top-level entry point for the WorkManager background isolate.
 ///
@@ -84,16 +191,17 @@ Future<void> checkAndFireDueReminders(AppDatabase db) async {
       final reminderToday =
           DateTime(now.year, now.month, now.day, hour, min);
 
-      // Fire window: reminder time ± 15 minutes
-      if (now.isBefore(reminderToday.subtract(const Duration(minutes: 15)))) continue;
-      if (now.isAfter(reminderToday.add(const Duration(minutes: 1)))) continue;
+      // Fire window: up to 1 minute before due time, up to 20 minutes after due time
+      if (!ReminderGuardian.isInWindow(reminderTime: reminderToday, now: now)) continue;
 
       // Check if today is a scheduled day
       if (!_isScheduledDay(deadline, now)) continue;
 
       // Check if already fired today (lastReminderFiredDate guard)
-      final lastFire = deadline.lastReminderFiredDate;
-      if (lastFire != null && !lastFire.isBefore(today)) continue;
+      if (ReminderGuardian.isAlreadyFiredToday(
+          lastReminderFiredDate: deadline.lastReminderFiredDate, now: now)) {
+        continue;
+      }
 
       await _fire(plugin, deadline);
       await (db.update(db.deadlines)..where((d) => d.id.equals(deadline.id)))

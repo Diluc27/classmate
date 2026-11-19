@@ -11,18 +11,11 @@ void main() async {
   // Initialize WorkManager background task dispatcher
   await Workmanager().initialize(callbackDispatcher);
 
-  // Register periodic guardian — runs every ~15 min (Android minimum)
-  // ExistingPeriodicWorkPolicy.update replaces any previous registration
-  // with the same unique name to avoid duplicates across restarts.
-  await Workmanager().registerPeriodicTask(
-    'com.classmate.classmate/reminder-guardian',
-    'checkDueReminders',
-    frequency: const Duration(minutes: 15),
-    existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
-    constraints: Constraints(
-      networkType: NetworkType.notRequired,
-    ),
-  );
+  // Register periodic guardian if background catch-up is enabled (ON by default)
+  final catchUpEnabled = await ReminderGuardian.isBackgroundCatchUpEnabled();
+  if (catchUpEnabled) {
+    await ReminderGuardian.registerPeriodicTask();
+  }
 
   runApp(
     const ProviderScope(

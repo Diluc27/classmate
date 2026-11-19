@@ -40,6 +40,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   TimeOfDay? _breakEnd = const TimeOfDay(hour: 13, minute: 0);
   bool? _notificationGranted;
   bool _exactReminders = false;
+  bool _backgroundCatchUp = true;
 
   @override
   void initState() {
@@ -217,14 +218,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final end = prefs.getString(prefSemesterEnd);
     final target = prefs.getInt(prefDefaultTargetPercent);
     final exact = prefs.getBool(prefExactReminders) ?? false;
+    final catchUp = await ReminderGuardian.isBackgroundCatchUpEnabled(prefs: prefs);
     if (mounted) {
       setState(() {
         if (start != null) _semesterStart = DateTime.tryParse(start);
         if (end != null) _semesterEnd = DateTime.tryParse(end);
         if (target != null) _defaultTarget = target.toDouble();
         _exactReminders = exact;
+        _backgroundCatchUp = catchUp;
       });
     }
+  }
+
+  Future<void> _onBackgroundCatchUpChanged(bool value) async {
+    setState(() => _backgroundCatchUp = value);
+    await ReminderGuardian.setBackgroundCatchUp(value);
   }
 
   Future<void> _onExactRemindersChanged(bool value) async {
@@ -886,6 +894,37 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             onTap: () => _onExactRemindersChanged(!_exactReminders),
           ),
+          _SettingTile(
+            title: 'Background catch-up',
+            subtitle:
+                're-checks reminders about every 15 minutes so they survive reboots and background kills',
+            trailing: Switch(
+              value: _backgroundCatchUp,
+              onChanged: _onBackgroundCatchUpChanged,
+            ),
+            onTap: () => _onBackgroundCatchUpChanged(!_backgroundCatchUp),
+          ),
+          if (!_exactReminders && !_backgroundCatchUp)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.warning_amber_rounded, size: 18, color: AppColors.warning),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Reminders may arrive late or be missed after a restart.',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        color: AppColors.warning,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           const SizedBox(height: 8),
           Center(
             child: SizedBox(
