@@ -147,4 +147,38 @@ void main() {
       expect(enabled, isTrue);
     });
   });
+
+  group('ReminderGuardian one-time old WorkManager task cancellation migration', () {
+    test('Flag unset: cancels old unique name and sets flag in SharedPreferences', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+
+      String? cancelledUniqueName;
+      await ReminderGuardian.cancelOldPeriodicTaskOnce(
+        prefs: prefs,
+        cancelFn: (uniqueName) async {
+          cancelledUniqueName = uniqueName;
+        },
+      );
+
+      expect(cancelledUniqueName, 'com.classmate.classmate/reminder-guardian');
+      expect(prefs.getBool(prefOldWorkManagerCancelled), isTrue);
+    });
+
+    test('Flag already set: does not call cancel', () async {
+      SharedPreferences.setMockInitialValues({prefOldWorkManagerCancelled: true});
+      final prefs = await SharedPreferences.getInstance();
+
+      String? cancelledUniqueName;
+      await ReminderGuardian.cancelOldPeriodicTaskOnce(
+        prefs: prefs,
+        cancelFn: (uniqueName) async {
+          cancelledUniqueName = uniqueName;
+        },
+      );
+
+      expect(cancelledUniqueName, isNull);
+      expect(prefs.getBool(prefOldWorkManagerCancelled), isTrue);
+    });
+  });
 }

@@ -11,7 +11,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Service managing periodic reminder catch-up in the background via WorkManager.
 class ReminderGuardian {
-  static const String taskUniqueName = 'com.classmate.classmate/reminder-guardian';
+  static const String oldTaskUniqueName = 'com.classmate.classmate/reminder-guardian';
+  static const String taskUniqueName = 'com.ateno.app/reminder-guardian';
   static const String taskName = 'checkDueReminders';
   static const Duration taskFrequency = Duration(minutes: 15);
 
@@ -80,6 +81,24 @@ class ReminderGuardian {
       await cancelFn(taskUniqueName);
     } else {
       await Workmanager().cancelByUniqueName(taskUniqueName);
+    }
+  }
+
+  /// One-time migration to cancel the old WorkManager task registered under
+  /// the pre-rename unique name (`com.classmate.classmate/reminder-guardian`).
+  static Future<void> cancelOldPeriodicTaskOnce({
+    SharedPreferences? prefs,
+    Future<void> Function(String uniqueName)? cancelFn,
+  }) async {
+    final p = prefs ?? await SharedPreferences.getInstance();
+    final alreadyCancelled = p.getBool(prefOldWorkManagerCancelled) ?? false;
+    if (!alreadyCancelled) {
+      if (cancelFn != null) {
+        await cancelFn(oldTaskUniqueName);
+      } else {
+        await Workmanager().cancelByUniqueName(oldTaskUniqueName);
+      }
+      await p.setBool(prefOldWorkManagerCancelled, true);
     }
   }
 

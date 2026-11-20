@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 class AndroidShareService {
   AndroidShareService._();
 
-  static const String channelName = 'com.classmate.classmate/share';
+  static const String channelName = 'com.ateno.app/share';
   static const String shareTextMethod = 'shareText';
   static const String textKey = 'text';
   static const String subjectKey = 'subject';

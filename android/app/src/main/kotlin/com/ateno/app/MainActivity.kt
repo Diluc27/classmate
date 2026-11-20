@@ -1,4 +1,4 @@
-package com.classmate.classmate
+package com.ateno.app
 
 import android.content.Intent
 import android.content.ActivityNotFoundException
@@ -13,8 +13,8 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private companion object {
-        const val CHANNEL_NAME = "com.classmate.classmate/share"
-        const val ALARM_CHANNEL = "com.classmate.classmate/alarm"
+        const val CHANNEL_NAME = "com.ateno.app/share"
+        const val ALARM_CHANNEL = "com.ateno.app/alarm"
         const val METHOD_SHARE_TEXT = "shareText"
         const val METHOD_CAN_SCHEDULE_EXACT = "canScheduleExactAlarms"
         const val METHOD_REQUEST_EXACT = "requestExactAlarmPermission"

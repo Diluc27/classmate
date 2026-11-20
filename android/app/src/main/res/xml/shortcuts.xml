@@ -9,9 +9,9 @@
         android:shortcutLongLabel="@string/shortcut_add_class_long_label">
         <intent
             android:action="android.intent.action.VIEW"
-            android:targetPackage="com.classmate.classmate"
-            android:targetClass="com.classmate.classmate.MainActivity"
-            android:data="klasmate://app/add-class" />
+            android:targetPackage="com.ateno.app"
+            android:targetClass="com.ateno.app.MainActivity"
+            android:data="ateno://app/add-class" />
         <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
             <parameter-binding
                 android:key="feature"
@@ -22,7 +22,7 @@
     <!-- BII: "Hey Google, open Add Class on Ateno" -->
     <capability android:name="actions.intent.OPEN_APP_FEATURE">
         <intent>
-            <url-template android:value="klasmate://app/add-class" />
+            <url-template android:value="ateno://app/add-class" />
             <parameter
                 android:name="feature"
                 android:key="featureName"
@@ -34,7 +34,7 @@
     <capability android:name="custom.actions.intent.ADD_CLASS"
         app:queryPatterns="@array/add_class_query_patterns">
         <intent>
-            <url-template android:value="klasmate://app/add-class" />
+            <url-template android:value="ateno://app/add-class" />
         </intent>
     </capability>
 </shortcuts>
