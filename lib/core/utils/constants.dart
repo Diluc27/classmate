@@ -10,6 +10,7 @@ const String prefThemeMode = 'theme_mode';
 const String prefExactReminders = 'exact_reminders';
 const String prefBackgroundCatchUp = 'background_catch_up';
 const String prefShowTestReminderButton = 'show_test_reminder_button';
+const String prefOldWorkManagerCancelled = 'old_workmanager_cancelled';
 
 // Default values
 const int defaultTargetPercent = 75;

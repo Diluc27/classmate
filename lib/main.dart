@@ -11,6 +11,9 @@ void main() async {
   // Initialize WorkManager background task dispatcher
   await Workmanager().initialize(callbackDispatcher);
 
+  // Cancel old WorkManager task once if migrating from pre-rename build
+  await ReminderGuardian.cancelOldPeriodicTaskOnce();
+
   // Register periodic guardian if background catch-up is enabled (ON by default)
   final catchUpEnabled = await ReminderGuardian.isBackgroundCatchUpEnabled();
   if (catchUpEnabled) {

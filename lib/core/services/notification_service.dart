@@ -57,7 +57,7 @@ class NotificationService {
   Future<bool> canScheduleExactAlarms() async {
     if (!Platform.isAndroid) return false;
     try {
-      const channel = MethodChannel('com.classmate.classmate/alarm');
+      const channel = MethodChannel('com.ateno.app/alarm');
       final result = await channel.invokeMethod<bool>('canScheduleExactAlarms');
       return result ?? false;
     } catch (e) {
@@ -70,7 +70,7 @@ class NotificationService {
   Future<void> requestExactAlarmPermission() async {
     if (!Platform.isAndroid) return;
     try {
-      const channel = MethodChannel('com.classmate.classmate/alarm');
+      const channel = MethodChannel('com.ateno.app/alarm');
       await channel.invokeMethod('requestExactAlarmPermission');
     } catch (e) {
       debugPrint('[NotificationService] requestExactAlarmPermission error: $e');
