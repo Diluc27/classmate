@@ -30,3 +30,10 @@ When modifying Drift database tables or Riverpod providers:
 
 ## 5. Security & Sensitive Files
 - Never commit signing keystores, `key.properties`, certificates, or API keys.
+
+## 6. Release Checklist
+When preparing a release:
+- Create the keystore outside the repo.
+- Copy `key.properties.example` to `key.properties` and fill it in.
+- Bump the `+N` build number in `pubspec.yaml` before each upload.
+- Build with `flutter build appbundle --release`.
