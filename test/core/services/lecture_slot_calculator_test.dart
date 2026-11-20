@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:classmate/core/models/lecture_config.dart';
-import 'package:classmate/core/services/lecture_slot_calculator.dart';
+import 'package:ateno/core/models/lecture_config.dart';
+import 'package:ateno/core/services/lecture_slot_calculator.dart';
 
 void main() {
   group('LectureSlotCalculator', () {

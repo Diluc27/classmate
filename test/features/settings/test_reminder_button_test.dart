@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:classmate/core/utils/constants.dart';
-import 'package:classmate/features/settings/settings_screen.dart';
+import 'package:ateno/core/utils/constants.dart';
+import 'package:ateno/features/settings/settings_screen.dart';
 
 void main() {
   group('SettingsScreen test reminder button visibility decision', () {
