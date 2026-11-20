@@ -1,0 +1,9 @@
+# Example release signing configuration for Ateno.
+# Copy this file to android/key.properties and fill in real values.
+# WARNING: Never commit android/key.properties to version control.
+# The keystore itself must live outside the repository.
+
+storeFile=/path/to/keystore/upload-keystore.jks
+storePassword=exampleStorePassword
+keyAlias=exampleKeyAlias
+keyPassword=exampleKeyPassword
