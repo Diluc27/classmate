@@ -5,8 +5,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:drift/drift.dart';
 
-import 'package:classmate/core/database/app_database.dart';
-import 'package:classmate/core/utils/constants.dart';
+import 'package:ateno/core/database/app_database.dart';
+import 'package:ateno/core/utils/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Service managing periodic reminder catch-up in the background via WorkManager.

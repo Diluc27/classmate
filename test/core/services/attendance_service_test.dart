@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:classmate/core/services/attendance_service.dart';
+import 'package:ateno/core/services/attendance_service.dart';
 
 void main() {
   group('AttendanceStats', () {

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:classmate/core/services/reminder_guardian.dart';
-import 'package:classmate/core/utils/constants.dart';
+import 'package:ateno/core/services/reminder_guardian.dart';
+import 'package:ateno/core/utils/constants.dart';
 
 void main() {
   group('ReminderGuardian window boundaries', () {
